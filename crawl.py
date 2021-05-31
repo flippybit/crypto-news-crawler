@@ -1,3 +1,5 @@
+from re import A
+from typing import Text
 import requests
 import asyncio
 import aiohttp
@@ -15,19 +17,33 @@ for link in soup.find_all('a'):
    link_list.append(link.get('href'))
 
 
-print("printing filterd links********************************************")
-for i ,link in enumerate (link_list):
+# print("printing filterd links********************************************")
+# for i ,link in enumerate (link_list):
 
-    if ("crypto" in str(link)):
-        print (i,link)
+#     if ("crypto" in str(link)):
+#         print (i,link)
+
+async def url_extractor(response_text):
+
+    if (response_text is not None):
+
+        for i ,link in enumerate (link_list):
+            if ("crypto" in str(link)):
+                print (i,link)
+    return link
 
 
-async def spider():
+async def spider(session):
+    async with session.get('http://www.coindesk.com/tag/bitcoin-mining') as resp:
+             print( resp.status)
+             return await resp.text()
+
+async def main():
     async with aiohttp.ClientSession() as session:
-         async with session.get('http://httpbin.org/get') as resp:
-                print(resp.status)
-                print(await resp.text())
+        output = await asyncio.gather(spider(session))
+        url = await url_extractor(output)
+        print(url)
 
-
-loop = asyncio.get_event_loop()
-loop.run_until_complete(spider())
+# loop = asyncio.get_event_loop()
+# loop.run_until_complete(spider())
+asyncio.run(main())
