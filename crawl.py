@@ -33,14 +33,15 @@ async def url_extractor(response_text):
     return link
 
 
-async def spider(session):
-    async with session.get('http://www.coindesk.com/tag/bitcoin-mining') as resp:
+async def spider(session,url):
+    async with session.get(url) as resp:
              print( resp.status)
              return await resp.text()
 
 async def main():
+    url ='http://www.coindesk.com/tag/bitcoin-mining'
     async with aiohttp.ClientSession() as session:
-        output = await asyncio.gather(spider(session))
+        output = await asyncio.gather(spider(session,url))
         url = await url_extractor(output)
         print(url)
 
