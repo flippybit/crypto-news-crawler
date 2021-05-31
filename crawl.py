@@ -1,5 +1,5 @@
 import requests
 from bs4 import beautifulsoup4
 
-resp = requests.get("http://www.google.com")
+resp = requests.get("www.coindesk.com")
 print(resp.text)
