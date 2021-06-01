@@ -5,6 +5,7 @@ import re
 import sys
 from typing import Text
 import aiofiles
+from asyncio.queues import QueueEmpty
 import requests
 import asyncio
 import aiohttp
@@ -25,10 +26,12 @@ async def url_extractor(response):
        link_set.add(link.get('href'))
     
     if (response is not None):
-
+        
         for link in link_set:
+           # se busca los link con la palabra "crypto"
+           # y los links que no nos lleven fuera de la pagina (porque suele ser twitter)
             if ("crypto" in str(link) and "https:" not in str(link)):
-                 print (link)
+                #  print (link)
                  filterd_links.append(link)
 
     print("end")
@@ -62,12 +65,6 @@ async def parse(url: str, session: ClientSession, **kwargs) -> set:
         logging.info("Found %d links for %s", len(found), url)
         return links
 
-
-async def spider(session,url):
-    async with session.get(url) as resp:
-             print( resp.status)
-             return await resp.text()
-
 async def fetch_html(url: str, session: ClientSession) -> str:
     """GET request wrapper to fetch page HTML.
 
@@ -94,26 +91,34 @@ async def main():
     url ='http://www.coindesk.com/tag/bitcoin-mining'
    
     async with aiohttp.ClientSession() as ses:
-        q = queue.Queue(10)
+        q = queue.Queue(50)
         q.put("http://www.coindesk.com/tag/bitcoin-mining")
 
+        tasks = []
         output = await asyncio.gather(parse(session=ses, url=url))
         
         #url = await url_extractor(output)
-        for i,link in enumerate(output):
-            # print(link)
-            q.put(output[i])
+        print("loop start ")
+        for link in output[0]:
+            q.put(link)
 
-        print(f'size of output {len(output)}')
-        print(f' size of queue:{q.qsize()}')
-    
-    while not q.empty:
-        print(q.get())
+        print(f'size of queue:{q.qsize()}')
+        
+        while q.not_empty:
+            try:
+                next_url=q.get_nowait()
+                print(next_url)
+                tasks.append(parse(session=ses,url=url))
+            except queue.Empty:
+                print("empty queue JOB DONE!")
+                break
+                
+            
+print("fin")
 
 # loop = asyncio.get_event_loop()
 # loop.run_until_complete(spider())
 
 if __name__ == "__main__":
-    q = queue.Queue(10)
-    q.put("http://www.coindesk.com/tag/bitcoin-mining")
-    asyncio.run(main())
+    
+   asyncio.run(main())
